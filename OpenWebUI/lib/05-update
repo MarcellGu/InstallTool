@@ -1,0 +1,38 @@
+#!/bin/bash
+# 更新管理
+
+extract_openwebui() {
+  if [ -e "${OPENWEBUI_INSTALL_DIR}/open-webui/.venv/lib/python3.11/site-packages/open_webui/data" ]; then
+    reset_openwebui_data
+    cp -r "${OPENWEBUI_INSTALL_DIR}/open-webui/.venv/lib/python3.11/site-packages/open_webui/data/." "${OPENWEBUI_INSTALL_DIR}/data/openwebui"
+  else
+    error "没有发现OpenWebUI数据"
+  fi
+}
+
+restore_openwebui() {
+  if [ -e "${OPENWEBUI_INSTALL_DIR}/data/openwebui" ]; then
+    reset_openwebui
+    cp -r "${OPENWEBUI_INSTALL_DIR}/data/openwebui/." "${OPENWEBUI_INSTALL_DIR}/open-webui/.venv/lib/python3.11/site-packages/open_webui/data"  
+  else
+    warning "没有可以恢复的OpenWebUI数据"
+  fi
+}
+
+extract_pipelines() {
+  if [ -e "${OPENWEBUI_INSTALL_DIR}/pipelines/pipelines" ]; then
+    reset_pipelines_data
+    cp -r "${OPENWEBUI_INSTALL_DIR}/pipelines/pipelines" "${OPENWEBUI_INSTALL_DIR}/data/."
+  else
+    warning "没有发现Pipelines文件"
+  fi
+}
+
+restore_pipelines() {
+  if [ -e "${OPENWEBUI_INSTALL_DIR}/data/pipelines" ]; then
+    reset_pipelines
+    cp -r "${OPENWEBUI_INSTALL_DIR}/data/pipelines" "${OPENWEBUI_INSTALL_DIR}/pipelines"
+  else
+    warning "没有可以恢复的Pipelines文件"
+  fi
+}

@@ -1,0 +1,55 @@
+#!/bin/bash
+declare -gA ARGS_RESULT=(
+  [mode]=""
+  [action]=""
+)
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -i|--install)
+        ARGS_RESULT[mode]="install"
+        shift
+        ;;
+      -u|--update)
+        ARGS_RESULT[mode]="update"
+        shift
+        ;;
+      -r|--remove)
+        ARGS_RESULT[mode]="remove"
+        shift
+        if [[ -z "$1" ]]; then
+          ARGS_RESULT[action]="INVALID"
+        else
+          ARGS_RESULT[action]="$1"
+        fi
+        shift
+        ;;
+      -f|--fix)
+        ARGS_RESULT[mode]="fix"
+        shift
+        if [[ -z "$1" ]]; then
+          ARGS_RESULT[action]="INVALID"
+        else
+          ARGS_RESULT[action]="$1"
+        fi
+        shift
+        ;;
+      -h|--help)
+        ARGS_RESULT[mode]="help"
+        shift
+        ;;
+      *)
+        echo "未知参数: $1" >&2
+        shift
+        ;;
+    esac
+  done
+}
+
+output_json_result() {
+  declare -p ARGS_RESULT | sed -E 's/declare -gA ARGS_RESULT=$ (.*) $/\1/' | tr -d "'"
+}
+
+parse_args "$@"
+output_json_result

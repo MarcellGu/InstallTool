@@ -1,0 +1,65 @@
+#!/bin/bash
+# 核心安装逻辑
+
+dependencies_install() {
+  info "安装系统依赖..."
+  sudo apt update -y
+  sudo apt upgrade -y
+  sudo apt install git curl build-essential gcc g++ make libreadline-dev libssl-dev libbz2-dev zlib1g-dev libsqlite3-dev liblzma-dev libffi-dev ffmpeg -y
+}
+
+clone_repos() {
+  info "克隆仓库..."
+  proxy
+  mkdir -p "${OPENWEBUI_INSTALL_DIR}/source"
+  cd "${OPENWEBUI_INSTALL_DIR}/source"
+  for repo in "${!OPENWEBUI_REPOS[@]}"; do
+    if [ -d "./$repo" ]; then
+      info "$repo 已经存在,跳过克隆"
+    else
+      git clone "${OPENWEBUI_REPOS[$repo]}"
+    fi
+
+  done
+  sudo cp -r "${OPENWEBUI_INSTALL_DIR}/source/." "${OPENWEBUI_INSTALL_DIR}"
+  unproxy
+}
+
+openwebui_install() {
+  cd "${OPENWEBUI_INSTALL_DIR}/open-webui" || exit
+  if confirm "你是否拥有resource/onnxruntime-node文件夹在本项目根目录下"; then
+      sudo mkdir -p "${OPENWEBUI_INSTALL_DIR}/open-webui/node_modules"
+      sudo cp -r "$OPENWEBUI_ROOT/resource/onnxruntime-node" "${OPENWEBUI_INSTALL_DIR}/open-webui/node_modules" || error "onnxruntime-node安装失败"
+  fi
+  npm install
+  npm run build
+  source .venv/bin/activate
+  cd "${OPENWEBUI_INSTALL_DIR}/open-webui/backend" || exit
+  python -m pip install --upgrade pip --extra-index-url https://mirrors.pku.edu.cn/pypi/web/simple
+  pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+  pip config set global.extra-index-url https://mirrors.pku.edu.cn/pypi/web/simple
+  pip install -r requirements.txt
+  cd "${OPENWEBUI_INSTALL_DIR}/open-webui" || exit
+  pip install .
+  deactivate
+}
+
+pipelines_install() {
+  cd "${OPENWEBUI_INSTALL_DIR}/pipelines" || exit
+  source .venv/bin/activate
+  python -m pip install --upgrade pip --extra-index-url https://mirrors.pku.edu.cn/pypi/web/simple
+  pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+  pip config set global.extra-index-url https://mirrors.pku.edu.cn/pypi/web/simple
+  pip install -r requirements.txt
+
+  deactivate
+}
+
+install_core() {
+  dependencies_install
+  clone_repos
+  setup_python
+  setup_node
+  openwebui_install
+  pipelines_install
+}

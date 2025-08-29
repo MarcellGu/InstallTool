@@ -1,0 +1,65 @@
+#!/bin/bash
+# 全局配置
+
+declare -g HTTP_PROXY='http://127.0.0.1:33210'
+declare -g HTTPS_PROXY='http://127.0.0.1:33210'
+declare -g ALL_PROXY='socks5://127.0.0.1:33211'
+
+declare -g COMFYUI_INSTALL_DIR="/opt/ComfyUI"
+
+declare -g COMFYUI_PORT=8188
+
+declare -g COMFYUI_REPO="https://github.com/comfyanonymous/ComfyUI.git"
+
+declare -g COMFYUI_SERVICE=$(
+cat <<EOL
+[Unit]
+Description=ComfyUI
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=${COMFYUI_INSTALL_DIR}
+ExecStart=${COMFYUI_INSTALL_DIR}/.venv/bin/python ${COMFYUI_INSTALL_DIR}/main.py
+
+[Install]
+WantedBy=multi-user.target
+EOL
+)
+
+# nginx https加密配置文件
+declare -g NGINX_CONF=$(cat <<EOF
+server {
+  listen 555 ssl;
+  server_name chqt.tpddns.cn;
+
+  ssl_certificate /etc/nginx/certs/ComfyUI/cert.crt;
+  ssl_certificate_key /etc/nginx/certs/ComfyUI/cert.key;
+
+  # SSL 配置（可选，用于提高安全性）
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers on;
+  ssl_session_cache shared:SSL:10m;
+  ssl_session_timeout 10m;
+
+  location / {
+    proxy_pass http://localhost:${COMFYUI_PORT};
+
+    # Add WebSocket support
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+
+    # (Optional) Disable proxy buffering for better streaming response from models
+    proxy_buffering off;
+  }
+}
+EOF
+)

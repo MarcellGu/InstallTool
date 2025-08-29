@@ -1,0 +1,13 @@
+#!/bin/bash
+# 日志管理
+
+console() {
+  local color="$1" level="$2" message="$3"
+  printf "\e[${color}m%s\e[0m %s %s\n" "$level" "$(date +'%T')" "$message"
+}
+
+
+info()    { console "34" "[INFO]   " "$1"; }
+success() { console "32" "[SUCCESS]" "$1"; }
+warning() { console "33" "[WARNING]" "$1"; }
+error()   { console "31" "[ERROR]  " "$1"; exit 1; }

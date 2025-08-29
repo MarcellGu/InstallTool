@@ -1,0 +1,6 @@
+#!/bin/bash
+# 更新管理
+
+extract_comfyui() { info "DEVELOPING..."; }
+
+restore_comfyui() { info "DEVELOPING..."; }

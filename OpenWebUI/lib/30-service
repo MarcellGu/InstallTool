@@ -1,0 +1,54 @@
+#!/bin/bash
+
+setup_services() {
+  info "配置系统服务..."
+  info "创建服务..."
+  remove_services
+  sudo echo "$OPENWEBUI_SERVICE" | sudo tee /etc/systemd/system/openwebui.service
+  sudo echo "$PIPELINES_SERVICE" | sudo tee /etc/systemd/system/pipelines.service
+  systemctl daemon-reload
+  if [ -e /etc/systemd/system/openwebui ]; then
+    sudo systemctl enable openwebui
+    success "服务启动成功"
+  fi
+  if [ -e /etc/systemd/system/pipelines ]; then
+    sudo systemctl enable pipelines
+    success "服务启动成功"
+  fi
+}
+
+start_services() {
+  systemctl daemon-reload
+  if [ -e /etc/systemd/system/openwebui ]; then
+    sudo systemctl start openwebui
+    success "服务启动成功"
+  fi
+  if [ -e /etc/systemd/system/pipelines ]; then
+    sudo systemctl start pipelines
+    success "服务启动成功"
+  fi
+}
+
+stop_services() {
+  systemctl daemon-reload
+  if [ -e /etc/systemd/system/openwebui ]; then
+    sudo systemctl stop openwebui
+    success "服务停止成功"
+  fi
+  if [ -e /etc/systemd/system/pipelines ]; then
+    sudo systemctl stop pipelines
+    success "服务停止成功"
+  fi
+}
+
+restart_services() {
+  systemctl daemon-reload
+  if [ -e /etc/systemd/system/openwebui ]; then
+    sudo systemctl restart openwebui
+    success "服务重启成功"
+  fi
+  if [ -e /etc/systemd/system/pipelines ]; then
+    sudo systemctl restart pipelines
+    success "服务重启成功"
+  fi
+}

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+RootCA_Gen() {
+    sudo mkdir -p /etc/nginx/ca
+    cd /etc/nginx/ca || exit
+    sudo openssl genrsa -des3 -out RootCA.key 2048
+    sudo openssl req -x509 -new -nodes -key RootCA.key -sha256 -days 365 -out RootCA.crt
+}
+SiteCA_Sign() {
+    sudo mkdir -p /etc/nginx/certs/ComfyUI
+    cd /etc/nginx/certs/ComfyUI || exit
+    echo subjectAltName=DNS:chqt.tpddns.cn >> cert.ext
+    sudo openssl genrsa -out cert.key 2048
+    sudo openssl req -new -key cert.key -out cert.csr
+    sudo openssl x509 -req -in cert.csr -out cert.crt -days 365 -CAcreateserial -CA /etc/nginx/ca/RootCA.crt -CAkey /etc/nginx/ca/RootCA.key -CAserial serial -extfile cert.ext
+    openssl verify -CAfile /etc/nginx/ca/RootCA.crt cert.crt
+}

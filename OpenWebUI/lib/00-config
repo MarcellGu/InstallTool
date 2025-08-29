@@ -1,0 +1,105 @@
+#!/bin/bash
+# 全局配置
+
+declare -g HTTP_PROXY='http://127.0.0.1:33210'
+declare -g HTTPS_PROXY='http://127.0.0.1:33210'
+declare -g ALL_PROXY='socks5://127.0.0.1:33211'
+
+declare -g OPENWEBUI_INSTALL_DIR="/opt/OpenWebUI"
+declare -g OPENWEBUI_PORT=3000
+
+declare -A OPENWEBUI_REPOS=(
+  ["open-webui"]="https://github.com/open-webui/open-webui.git"
+  ["pipelines"]="https://github.com/open-webui/pipelines.git"
+  ["extension"]="https://github.com/open-webui/extension.git"
+  ["docs"]="https://github.com/open-webui/docs.git"
+)
+
+declare -g NVM_VERSION=0.40.2
+declare -g NODE_VERSION=22
+
+declare -g OPENAI_API_KEY="0p3n-w3bu!"
+declare -g WEBUI_SECRET_KEY="t0p-s3cr3t"
+
+declare -g USER_AGENT="USER_AGENT"
+
+declare -g OPENWEBUI_SERVICE=$(
+cat <<EOL
+[Unit]
+Description=OpenWebUI
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+Environment="HF_ENDPOINT=https://hf-mirror.com"
+Environment="OPENAI_API_BASE_URL=http://localhost:9099"
+Environment="OPENAI_API_KEY=${OPENAI_API_KEY}"
+Environment="WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}"
+Environment="USER_AGENT=${USER_AGENT}"
+Environment="PATH=${OPENWEBUI_INSTALL_DIR}/open-webui/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="VIRTUAL_ENV=${OPENWEBUI_INSTALL_DIR}/open-webui/.venv"
+WorkingDirectory=${OPENWEBUI_INSTALL_DIR}/open-webui
+ExecStart=${OPENWEBUI_INSTALL_DIR}/open-webui/.venv/bin/open-webui serve --port ${OPENWEBUI_PORT}
+
+[Install]
+WantedBy=multi-user.target
+EOL
+)
+
+declare -g PIPELINES_SERVICE=$(
+cat <<EOL
+[Unit]
+Description=Pipelines
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=${OPENWEBUI_INSTALL_DIR}/pipelines
+Environment="PATH=${OPENWEBUI_INSTALL_DIR}/pipelines/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="VIRTUAL_ENV=${OPENWEBUI_INSTALL_DIR}/pipelines/.venv"
+Environment="HF_ENDPOINT=https://hf-mirror.com"
+ExecStart=${OPENWEBUI_INSTALL_DIR}/pipelines/start.sh
+
+[Install]
+WantedBy=multi-user.target
+EOL
+)
+
+# nginx https加密配置文件
+declare -g NGINX_CONF=$(cat <<EOF
+server {
+  listen 444 ssl;
+  server_name chqt.tpddns.cn;
+
+  ssl_certificate /etc/nginx/certs/OpenWebUI/cert.crt;
+  ssl_certificate_key /etc/nginx/certs/OpenWebUI/cert.key;
+
+  # SSL 配置（可选，用于提高安全性）
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers on;
+  ssl_session_cache shared:SSL:10m;
+  ssl_session_timeout 10m;
+
+  location / {
+    proxy_pass http://localhost:${OPENWEBUI_PORT};
+
+    # Add WebSocket support (Necessary for version 0.5.0 and up)
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+
+    # (Optional) Disable proxy buffering for better streaming response from models
+    proxy_buffering off;
+  }
+}
+EOF
+)

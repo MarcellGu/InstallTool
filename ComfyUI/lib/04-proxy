@@ -1,0 +1,30 @@
+#!/bin/bash
+# 代理管理
+
+proxy() {
+  if confirm "是否使用代理?"; then
+    # 设置系统代理
+    export http_proxy='http://127.0.0.1:33210'
+    export https_proxy='http://127.0.0.1:33210'
+
+    # 设置socks5代理（适用于全协议）
+    export all_proxy='socks5://127.0.0.1:33211'
+
+    success "✅ 代理已设置（HTTP/HTTPS: 33210, SOCKS5: 33211）"
+    info "正在测试代理..."
+
+    if curl --silent --head --fail http://www.google.com >/dev/null; then
+      success '状态: ✅ 正常'
+    else
+      warning '状态: ⚠️  失败 请检查端口转发情况'
+      unproxy
+    fi
+  else
+    warning "代理设置未启用"
+  fi
+}
+
+unproxy() {
+  unset http_proxy https_proxy all_proxy
+  success "代理设置已禁用"
+}

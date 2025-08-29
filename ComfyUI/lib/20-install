@@ -1,0 +1,41 @@
+#!/bin/bash
+# 核心安装逻辑
+
+dependencies_install() {
+  info "安装系统依赖..."
+  sudo apt update -y
+  sudo apt upgrade -y
+  sudo apt install git curl build-essential gcc g++ make libreadline-dev libssl-dev libbz2-dev zlib1g-dev libsqlite3-dev liblzma-dev libffi-dev ffmpeg -y
+}
+
+clone_repo() {
+  info "克隆仓库..."
+  proxy
+  sudo rm -rf "${COMFYUI_INSTALL_DIR}/source"
+  mkdir -p "${COMFYUI_INSTALL_DIR}/source"
+  cd "${COMFYUI_INSTALL_DIR}/source"
+  git clone ${COMFYUI_REPO}
+  unproxy
+  sudo cp -r "${COMFYUI_INSTALL_DIR}/source/ComfyUI/." "${COMFYUI_INSTALL_DIR}"
+}
+
+comfyui_install() {
+  cd "${COMFYUI_INSTALL_DIR}" || exit
+  source .venv/bin/activate
+  python -m pip install --upgrade pip \
+  --extra-index-url https://mirrors.pku.edu.cn/pypi/web/simple \
+  --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+  pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+  pip config set global.extra-index-url https://mirrors.pku.edu.cn/pypi/web/simple
+  pip install -r requirements.txt \
+    --extra-index-url https://mirrors.pku.edu.cn/pypi/web/simple \
+    --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+  deactivate
+}
+
+install_core() {
+  dependencies_install
+  clone_repo
+  setup_python
+  comfyui_install
+}

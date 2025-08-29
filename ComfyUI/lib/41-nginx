@@ -1,0 +1,16 @@
+#!/bin/bash
+# Nginx配置
+
+setup_nginx() {
+  info "配置加密..."
+  sudo -n apt -y install nginx
+  cd /etc/nginx || exit
+  [ ! -d /etc/nginx/ca ] && RootCA_Gen
+  [ ! -d /etc/nginx/certs/ComfyUI ] && SiteCA_Sign
+  info "配置站点..."
+  remove_nginx
+  cd /etc/nginx/sites-available || exit
+  sudo echo "$NGINX_CONF" | sudo tee /etc/nginx/sites-available/comfyui
+  sudo ln -s /etc/nginx/sites-available/comfyui /etc/nginx/sites-enabled/comfyui
+  sudo systemctl reload nginx
+}

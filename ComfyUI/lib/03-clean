@@ -1,0 +1,27 @@
+#!/bin/bash
+# 清理操作
+
+remove_service() {
+  systemctl daemon-reload
+  [ -e /etc/systemd/system/comfyui ] && sudo systemctl stop comfyui
+  [ -e /etc/systemd/system/comfyui ] && sudo systemctl disable comfyui
+  sudo rm -rf /etc/systemd/system/comfyui.service
+  systemctl daemon-reload
+}
+
+remove_nginx() {
+  sudo rm -f /etc/nginx/sites-available/comfyui
+  sudo rm -f /etc/nginx/sites-enabled/comfyui
+  sudo systemctl daemon-reload
+  sudo systemctl reload nginx
+}
+
+remove_files() {
+  sudo rm -rf "$COMFYUI_INSTALL_DIR"
+}
+
+uninstall() {
+  remove_service
+  remove_nginx
+  remove_files
+}

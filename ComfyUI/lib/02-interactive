@@ -1,0 +1,15 @@
+#!/bin/bash
+# 用户交互
+
+check_sudo() {
+  if ! sudo -n true 2>/dev/null; then
+    error "需要sudo权限，请使用sudo运行或配置免密"
+  fi
+  success "权限验证通过"
+}
+
+confirm() {
+  local prompt="$1"
+  read -rp "$prompt [Y/N] " response
+  [[ "$response" =~ ^[Yy]$ ]]
+}

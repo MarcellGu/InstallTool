@@ -1,0 +1,70 @@
+#!/bin/bash
+# 清理操作
+
+remove_services() {
+  systemctl daemon-reload
+  [ -e /etc/systemd/system/openwebui ] && sudo systemctl stop openwebui
+  [ -e /etc/systemd/system/pipelines ] && sudo systemctl stop pipelines
+  [ -e /etc/systemd/system/openwebui ] && sudo systemctl disable openwebui
+  [ -e /etc/systemd/system/pipelines ] && sudo systemctl disable pipelines
+  sudo rm -rf /etc/systemd/system/openwebui.service
+  sudo rm -rf /etc/systemd/system/pipelines.service
+  systemctl daemon-reload
+}
+
+remove_nginx() {
+  sudo rm -f /etc/nginx/sites-available/openwebui
+  sudo rm -f /etc/nginx/sites-enabled/openwebui
+  systemctl daemon-reload
+  systemctl reload nginx
+}
+
+remove_files() {
+  sudo rm -rf "$OPENWEBUI_INSTALL_DIR/open-webui"
+  sudo rm -rf "$OPENWEBUI_INSTALL_DIR/pipelines"
+  sudo rm -rf "$OPENWEBUI_INSTALL_DIR/extension"
+  sudo rm -rf "$OPENWEBUI_INSTALL_DIR/docs"
+}
+
+remove_source() {
+  sudo rm -rf "$OPENWEBUI_INSTALL_DIR/source/open-webui"
+  sudo rm -rf "$OPENWEBUI_INSTALL_DIR/source/pipelines"
+  sudo rm -rf "$OPENWEBUI_INSTALL_DIR/source/extension"
+  sudo rm -rf "$OPENWEBUI_INSTALL_DIR/source/docs"
+}
+
+purge_files() {
+  rm -rf "$OPENWEBUI_INSTALL_DIR"
+}
+
+reset_openwebui() {
+  rm -rf "${OPENWEBUI_INSTALL_DIR}/open-webui/.venv/lib/python3.11/site-packages/open_webui/data"
+  mkdir -p "${OPENWEBUI_INSTALL_DIR}/open-webui/.venv/lib/python3.11/site-packages/open_webui/data"
+}
+
+reset_pipelines() {
+  rm -rf "${OPENWEBUI_INSTALL_DIR}/pipelines/pipelines"
+  mkdir -p "${OPENWEBUI_INSTALL_DIR}/pipelines/pipelines"
+}
+
+reset_openwebui_data() {
+  sudo rm -rf "${OPENWEBUI_INSTALL_DIR}/data/openwebui"
+  sudo mkdir -p "${OPENWEBUI_INSTALL_DIR}/data"
+}
+
+reset_pipelines_data() {
+  sudo rm -rf "${OPENWEBUI_INSTALL_DIR}/data/pipelines"
+  sudo mkdir -p "${OPENWEBUI_INSTALL_DIR}/data"
+}
+
+uninstall() {
+  remove_services
+  remove_nginx
+  remove_files
+}
+
+purge_all() {
+  remove_services
+  remove_nginx
+  purge_files
+}
